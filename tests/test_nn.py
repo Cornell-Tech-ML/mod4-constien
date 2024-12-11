@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from hypothesis import given
 
@@ -32,7 +33,25 @@ def test_avg(t: Tensor) -> None:
 @given(tensors(shape=(2, 3, 4)))
 def test_max(t: Tensor) -> None:
     # TODO: Implement for Task 4.4.
-    raise NotImplementedError("Need to implement for Task 4.4")
+    t.requires_grad_(True)
+    max = minitorch.max(t, dim=2)
+
+    # Forward check
+    assert np.array_equal(t.to_numpy().max(axis=2, keepdims=True), max.to_numpy())
+
+    max.sum().backward()
+
+    # Backward check
+    for i in range(2):
+        for j in range(3):
+            max = -float("inf")
+            for k in range(4):
+                if t[i, j, k] > max:
+                    max = t[i, j, k]
+
+            for k in range(4):
+                if t.grad[i, j, k] == 1.0:  # type: ignore
+                    assert_close(t[i, j, k], max)
 
 
 @pytest.mark.task4_4
